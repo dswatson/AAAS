@@ -17,16 +17,14 @@ txi <- tximport(files, type = 'kallisto', tx2gene = t2g, importer = fread)
 # Differential expression
 dds <- DESeqDataSetFromTximport(txi, colData = clin, design = ~ Status)  
 dds <- dds[rowSums(counts(dds)) > 1, ]
-dds <- DESeq(dds)
-res <- lfcShrink(dds, coef = 2) %>% na.omit(.)
-genes <- rownames(res)
-res <- res %>%
-  as.data.frame(.) %>%
-  mutate(AvgExpr = log10(baseMean),
-       EnsemblID = genes) %>% 
-  rename(logFC = log2FoldChange,
-       p.value = pvalue,
-       q.value = padj) %>%
+dds <- DESeq(dds, betaPrior = TRUE)
+res <- results(dds, coef = 2, tidy = TRUE) %>%
+  na.omit(.) %>%
+  mutate(AvgExpr = log10(baseMean)) %>% 
+  rename(EnsemblID = row,
+             logFC = log2FoldChange,
+           p.value = pvalue,
+           q.value = padj) %>%
   arrange(p.value) %>%
   select(EnsemblID, AvgExpr, logFC, p.value, q.value)
 
