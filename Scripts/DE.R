@@ -2,12 +2,11 @@
 library(data.table)
 library(tximport)
 library(DESeq2)
-library(edgeR)
 library(tidyverse)
-library(bioplotr)
 
 # Import data
 setwd('./Documents/QMUL/AAAS')
+anno <- fread('./Data/Hs.anno.csv')
 clin <- fread('./Data/clinical.csv', stringsAsFactors = TRUE) %>%
   mutate(Status = relevel(Status, ref = 'Healthy'))
 t2g <- readRDS('./Data/Hs91.t2g.rds')
@@ -18,7 +17,7 @@ txi <- tximport(files, type = 'kallisto', tx2gene = t2g, importer = fread)
 dds <- DESeqDataSetFromTximport(txi, colData = clin, design = ~ Status)  
 dds <- dds[rowSums(counts(dds)) > 1, ]
 dds <- DESeq(dds, betaPrior = TRUE)
-res <- results(dds, coef = 2, tidy = TRUE) %>%
+results(dds, coef = 2, tidy = TRUE) %>%
   na.omit(.) %>%
   mutate(AvgExpr = log10(baseMean)) %>% 
   rename(EnsemblID = row,
@@ -26,6 +25,9 @@ res <- results(dds, coef = 2, tidy = TRUE) %>%
            p.value = pvalue,
            q.value = padj) %>%
   arrange(p.value) %>%
-  select(EnsemblID, AvgExpr, logFC, p.value, q.value)
+  inner_join(anno, by = 'EnsemblID') %>%
+  select(EnsemblID, GeneSymbol, Description, 
+         AvgExpr, logFC, p.value, q.value) %>%
+  fwrite('Disease_vs_Healthy.csv')
 
 
