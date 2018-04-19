@@ -28,6 +28,6 @@ results(dds, coef = 2, tidy = TRUE) %>%
   inner_join(anno, by = 'EnsemblID') %>%
   select(EnsemblID, GeneSymbol, Description, 
          AvgExpr, logFC, p.value, q.value) %>%
-  fwrite('Disease_vs_Healthy.csv')
+  fwrite('./Results/Disease_vs_Healthy.csv')
 
 
